@@ -1,5 +1,5 @@
 // src/views/EventEditor.jsx
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Button from "../atoms/Button";
 import EventFields from "../molecules/EventFields";
@@ -33,12 +33,15 @@ export default function EventEditor() {
     }
   );
 
+  // 🔑 Solo inicializa el form la primera vez que encuentra el evento
+  const initialized = useRef(false);
   useEffect(() => {
-    if (current) {
+    if (editingId && current && !initialized.current) {
       const { id, ...rest } = current;
       setForm(rest);
+      initialized.current = true;
     }
-  }, [current, setForm]);
+  }, [editingId, current, setForm]);
 
   const onLadaChange = (e) => {
     const lada = e.target.value;
@@ -57,7 +60,12 @@ export default function EventEditor() {
         onSubmit={handleSubmit}
         className="space-y-4 bg-white p-4 rounded-2xl shadow"
       >
-        <EventFields form={form} errors={errors} onChange={onChange} onLadaChange={onLadaChange} />
+        <EventFields
+          form={form}
+          errors={errors}
+          onChange={onChange}
+          onLadaChange={onLadaChange}
+        />
         <div className="flex gap-2">
           <Button type="submit">Guardar</Button>
           <Button

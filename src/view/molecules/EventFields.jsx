@@ -10,43 +10,27 @@ const ladas = [
 ];
 
 export default function EventFields({ form, errors, onChange }) {
-  const [lada, setLada] = useState("+52");
-  const [number, setNumber] = useState("");
 
   const now = new Date();
   const localISOTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
     .toISOString()
     .slice(0, 16);
 
-  // Inicializar lada y número solo una vez al montar o al recibir un form con phone_number
-useEffect(() => {
-  if (form.phone_number) {
-    // Detectar lada válida
-    const matchedLada = ladas.find(l => form.phone_number.startsWith(l.code));
-    if (matchedLada) {
-      setLada(matchedLada.code);
-      setNumber(form.phone_number.slice(matchedLada.code.length)); // todo lo que queda después de la lada
-    } else {
-      setNumber(form.phone_number); // si no coincide con ninguna lada, mostrar todo
-    }
-  }
-}, [form.phone_number]);
+const matchedLada = ladas.find(l => form.phone_number.startsWith(l.code));
+const lada = matchedLada ? matchedLada.code : "+52";
+const number = matchedLada
+  ? form.phone_number.slice(matchedLada.code.length)
+  : form.phone_number;
 
-  const handleLadaChange = (e) => {
-    const newLada = e.target.value;
-    setLada(newLada);
-    onChange({
-      target: { name: "phone_number", value: `${newLada}${number}` }
-    });
-  };
+const handleLadaChange = (e) => {
+  const newLada = e.target.value;
+  onChange({ target: { name: "phone_number", value: `${newLada}${number}` } });
+};
 
-  const handleNumberChange = (e) => {
-    const newNumber = e.target.value.replace(/\D/g, "");
-    setNumber(newNumber);
-    onChange({
-      target: { name: "phone_number", value: `${lada}${newNumber}` }
-    });
-  };
+const handleNumberChange = (e) => {
+  const newNumber = e.target.value.replace(/\D/g, "");
+  onChange({ target: { name: "phone_number", value: `${lada}${newNumber}` } });
+};
 
   return (
     <div className="space-y-3">

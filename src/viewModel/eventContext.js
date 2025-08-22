@@ -15,21 +15,28 @@ export function EventsProvider({ children }) {
   const [error, setError] = useState(null);
 
   // Cargar todos los eventos
-  const loadAll = async () => {
-    try {
-      setLoading(true);
-      const data = await fetchNotifications();
-      setItems(data || []);
-    } catch {
-      setError("No se pudieron cargar las notificaciones");
-    } finally {
-      setLoading(false);
-    }
-  };
+const loadAll = async (silent = false) => {
+  try {
+    if (!silent) setLoading(true); // solo la primera vez o cuando quieras mostrar spinner
+    const data = await fetchNotifications();
+    setItems(data || []);
+  } catch {
+    setError("No se pudieron cargar las notificaciones");
+  } finally {
+    if (!silent) setLoading(false);
+  }
+};
 
-  useEffect(() => {
-    loadAll();
-  }, []);
+useEffect(() => {
+  loadAll(false); // primera vez muestra spinner
+
+  const interval = setInterval(() => {
+    loadAll(true); // refresh silencioso, no parpadea
+  }, 5000);
+
+  return () => clearInterval(interval);
+}, []);
+
 
   // Crear evento
   const create = async (evento) => {
