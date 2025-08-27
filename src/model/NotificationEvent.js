@@ -1,6 +1,6 @@
 // src/model/NotificationEvent.js
 export class NotificationEvent {
-  constructor({ id, event_name, message, recipient_name, phone_number, scheduled_at, status = 'Pendiente' }) {
+  constructor({ id, event_name, message, recipient_name, phone_number, scheduled_at, status = 'pending' }) {
     this.id = id;
     this.event_name = event_name;
     this.message = message;

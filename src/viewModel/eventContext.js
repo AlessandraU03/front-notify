@@ -1,11 +1,16 @@
+// src/context/EventsProvider.jsx
 import React, { createContext, useContext, useEffect, useState } from "react";
 import {
   fetchNotifications,
   createNotification,
   updateNotification,
   deleteNotification,
-  searchNotifications
+  searchNotifications, createMassNotifications,
+  suspendNotification,
+  resumeNotification,
+  resendNotification,
 } from "../services/notificationsApi";
+import { useAuth } from "../context/AuthContext";
 
 const EventsContext = createContext();
 
@@ -13,54 +18,58 @@ export function EventsProvider({ children }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filter, setFilter] = useState("todos"); // ← Estado del filtro
+  const { isAuthenticated, user } = useAuth();
 
-  // Cargar todos los eventos
-const loadAll = async (silent = false) => {
-  try {
-    if (!silent) setLoading(true); // solo la primera vez o cuando quieras mostrar spinner
-    const data = await fetchNotifications();
-    setItems(data || []);
-  } catch {
-    setError("No se pudieron cargar las notificaciones");
-  } finally {
-    if (!silent) setLoading(false);
-  }
-};
+  // Función para cargar datos según el filtro actual
+  const loadData = async (silent = false) => {
+    try {
+      if (!silent) setLoading(true);
 
-useEffect(() => {
-  loadAll(false); // primera vez muestra spinner
+      let data = [];
+      if (filter === "todos") {
+        data = await fetchNotifications();
+      } else {
+        data = await searchNotifications({ estado: filter });
+      }
 
-  const interval = setInterval(() => {
-    loadAll(true); // refresh silencioso, no parpadea
-  }, 5000);
+      setItems(data || []);
+    } catch {
+      setError("No se pudieron cargar las notificaciones");
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
 
-  return () => clearInterval(interval);
-}, []);
+  // Carga inicial y refresco automático
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadData(false);
+      const interval = setInterval(() => loadData(true), 5000); // refresco cada 5s
+      return () => clearInterval(interval);
+    } else {
+      setItems([]);
+    }
+  }, [isAuthenticated, user?.id, filter]);
 
-
-  // Crear evento
   const create = async (evento) => {
     try {
-      const response = await createNotification(evento);
-      const newEvent = response.datos; // 👈 aquí está el evento real
-      setItems(prev => [...prev, newEvent]);
+      const res = await createNotification(evento);
+      setItems(prev => [...prev, res.datos]);
     } catch {
       setError("No se pudo crear el evento");
     }
   };
 
-  // Actualizar evento
   const update = async (id, evento) => {
     try {
-      const response = await updateNotification(id, evento);
-      const updated = response.datos; // 👈 igual aquí
-      setItems(prev => prev.map(e => (e.id === id ? updated : e)));
+      const res = await updateNotification(id, evento);
+      setItems(prev => prev.map(e => (e.id === id ? res.datos : e)));
     } catch {
       setError("No se pudo actualizar el evento");
     }
   };
 
-  // Eliminar evento
   const remove = async (id) => {
     try {
       await deleteNotification(id);
@@ -70,28 +79,51 @@ useEffect(() => {
     }
   };
 
-  // Filtrar por estado
   const filterByEstado = async (estado) => {
+    setFilter(estado); // ← guardamos el filtro
+  };
+
+   const createMassive = async (evento) => {
     try {
-      setLoading(true);
-      const data = await searchNotifications({ estado });
-      setItems(data || []);
+      const res = await createMassNotifications(evento);
+      setItems(prev => [...prev, ...(res.datos.notificaciones || [])]);
     } catch {
-      setError("No se pudieron filtrar las notificaciones");
-    } finally {
-      setLoading(false);
+      setError("No se pudieron crear las notificaciones masivas");
     }
   };
 
+  const suspend = async (id) => {
+    try {
+      const res = await suspendNotification(id);
+      setItems(prev => prev.map(e => (e.id === id ? res.datos : e)));
+    } catch {
+      setError("No se pudo suspender la notificación");
+    }
+  };
 
+  const resume = async (id) => {
+    try {
+      const res = await resumeNotification(id);
+      setItems(prev => prev.map(e => (e.id === id ? res.datos : e)));
+    } catch {
+      setError("No se pudo reanudar la notificación");
+    }
+  };
 
-    return React.createElement(
+  const resend = async (id, data) => {
+    try {
+      const res = await resendNotification(id, data);
+      setItems(prev => [...prev, ...(res.datos.nuevas_notificaciones || [])]);
+    } catch {
+      setError("No se pudo reenviar la notificación");
+    }
+  };
+
+   return React.createElement(
     EventsContext.Provider,
-    { value: { items, loading, error, create, update, remove, filterByEstado, loadAll } },
+    { value: { items, loading, error, create, update, remove, filterByEstado, suspend,resend,resume,createMassive, loadAll: loadData } },
     children
   );
 }
 
-export function useEventsContext() {
-  return useContext(EventsContext);
-}
+export const useEventsContext = () => useContext(EventsContext);
