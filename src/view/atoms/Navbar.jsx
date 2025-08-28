@@ -12,20 +12,20 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-gray-800 text-white p-4 flex justify-between">
-      <div>
-        <Link to="/" className="mr-4">Inicio</Link>
-       
-      </div>
-      <div>
-        <span className="mr-4">{user?.full_name || user?.email}</span>
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 px-3 py-1 rounded hover:bg-red-600"
-        >
-          Logout
-        </button>
-      </div>
-    </nav>
+    <nav className="bg-gray-800 text-white p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+  <div className="flex flex-wrap gap-4">
+    <Link to="/" className="hover:underline">Inicio</Link>
+  </div>
+  <div className="flex flex-wrap items-center gap-2">
+    <span className="text-sm">{user?.full_name || user?.email}</span>
+    <button
+      onClick={handleLogout}
+      className="bg-red-500 px-3 py-1 rounded hover:bg-red-600"
+    >
+      Logout
+    </button>
+  </div>
+</nav>
+
   );
 }

@@ -19,10 +19,10 @@ export const RegisterView = () => {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen">
+    <div className="flex justify-center items-center min-h-screen">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-6 rounded shadow-md w-96"
+        className="bg-white p-6 rounded shadow-md w-full max-w-md"
       >
         <h1 className="text-2xl font-bold mb-4">Registrar Usuario</h1>
         <input

@@ -16,8 +16,8 @@ export const LoginView = () => {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-md w-96">
+    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold mb-4 text-center">Iniciar Sesión</h1>
         {error && <p className="text-red-500 mb-2">{error}</p>}
         <input type="email" placeholder="Correo electrónico" value={email} onChange={e => setEmail(e.target.value)} className="border p-2 w-full mb-4 rounded" required />
