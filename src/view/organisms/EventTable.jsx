@@ -23,6 +23,78 @@ export default function EventTable({
   onResume,
   onResend,
 }) {
+  // 🔄 Centralizamos la lógica de reenviar aquí
+  const handleResend = async (e) => {
+    const { value: action } = await MySwal.fire({
+      title: "¿Desea reenviar la notificación?",
+      text: "Puede reenviar al número original o a otros números.",
+      icon: "question",
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: "Sí, al número original",
+      denyButtonText: "Sí, a otros números",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (action === undefined) return;
+
+    if (action) {
+      await onResend(e.id, {
+        phone_numbers: [e.phone_number],
+        recipient_names: [e.recipient_name],
+      });
+      MySwal.fire(
+        "Enviado",
+        "La notificación fue reenviada al número original",
+        "success"
+      );
+    } else {
+      const { value: input } = await MySwal.fire({
+        title: "Ingrese los destinatarios",
+        html: `<textarea id="swal-input" class="w-full border rounded-xl px-3 py-2 outline-none focus:ring focus:ring-blue-200 min-h-[120px]" placeholder="+521234567890, Pedro Martínez\n+521234567891, Juan Pérez"></textarea>`,
+        focusConfirm: false,
+        showCancelButton: true,
+        preConfirm: () => {
+          const val = document.getElementById("swal-input")?.value;
+          if (!val || !val.trim()) {
+            Swal.showValidationMessage("Debe ingresar al menos un destinatario");
+            return null;
+          }
+          return val;
+        },
+      });
+
+      if (!input) return;
+
+      const lines = input
+        .split("\n")
+        .map((l) => l.trim())
+        .filter(Boolean);
+
+      const phone_numbers = [];
+      const recipient_names = [];
+
+      lines.forEach((line, index) => {
+        const parts = line.split(",");
+        phone_numbers.push(parts[0].trim());
+        recipient_names.push(
+          parts[1]?.trim() || `Destinatario ${index + 1}`
+        );
+      });
+
+      await onResend(e.id, {
+        phone_numbers,
+        recipient_names,
+      });
+
+      MySwal.fire(
+        "Enviado",
+        `La notificación fue reenviada a ${phone_numbers.length} destinatarios`,
+        "success"
+      );
+    }
+  };
+
   return (
     <div>
       {/* 📱 Cards en móvil */}
@@ -95,79 +167,7 @@ export default function EventTable({
                 {e.status === "sent" && (
                   <Button
                     className="bg-purple-500 hover:bg-purple-600 w-full"
-                    onClick={async () => {
-                      const { value: action } = await MySwal.fire({
-                        title: "¿Desea reenviar la notificación?",
-                        text: "Puede reenviar al número original o a otros números.",
-                        icon: "question",
-                        showCancelButton: true,
-                        showDenyButton: true,
-                        confirmButtonText: "Sí, al número original",
-                        denyButtonText: "Sí, a otros números",
-                        cancelButtonText: "Cancelar",
-                      });
-
-                      if (action === undefined) return;
-
-                      if (action) {
-                        await onResend(e.id, {
-                          phone_numbers: [e.phone_number],
-                          recipient_names: [e.recipient_name],
-                        });
-                        MySwal.fire(
-                          "Enviado",
-                          "La notificación fue reenviada al número original",
-                          "success"
-                        );
-                      } else {
-                        const { value: input } = await MySwal.fire({
-                          title: "Ingrese los destinatarios",
-                          html: `<textarea id="swal-input" class="w-full border rounded-xl px-3 py-2 outline-none focus:ring focus:ring-blue-200 min-h-[120px]" placeholder="+521234567890, Pedro Martínez\n+521234567891, Juan Pérez"></textarea>`,
-                          focusConfirm: false,
-                          showCancelButton: true,
-                          preConfirm: () => {
-                            const val =
-                              document.getElementById("swal-input")?.value;
-                            if (!val || !val.trim()) {
-                              Swal.showValidationMessage(
-                                "Debe ingresar al menos un destinatario"
-                              );
-                              return null;
-                            }
-                            return val;
-                          },
-                        });
-
-                        if (!input) return;
-
-                        const lines = input
-                          .split("\n")
-                          .map((l) => l.trim())
-                          .filter(Boolean);
-
-                        const phone_numbers = [];
-                        const recipient_names = [];
-
-                        lines.forEach((line, index) => {
-                          const parts = line.split(",");
-                          phone_numbers.push(parts[0].trim());
-                          recipient_names.push(
-                            parts[1]?.trim() || `Destinatario ${index + 1}`
-                          );
-                        });
-
-                        await onResend(e.id, {
-                          phone_numbers,
-                          recipient_names,
-                        });
-
-                        MySwal.fire(
-                          "Enviado",
-                          `La notificación fue reenviada a ${phone_numbers.length} destinatarios`,
-                          "success"
-                        );
-                      }
-                    }}
+                    onClick={() => handleResend(e)}
                   >
                     Reenviar
                   </Button>
@@ -241,7 +241,10 @@ export default function EventTable({
                       </Button>
                     )}
                     {e.status === "sent" && (
-                      <Button className="bg-purple-500 hover:bg-purple-600">
+                      <Button
+                        className="bg-purple-500 hover:bg-purple-600"
+                        onClick={() => handleResend(e)}
+                      >
                         Reenviar
                       </Button>
                     )}

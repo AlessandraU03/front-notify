@@ -1,17 +1,16 @@
-// src/context/AuthContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
 import api from "../services/authApi";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  // 👉 Estado inicial: si hay token, arranca "cargando"
+ 
   const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem("user");
     return storedUser ? JSON.parse(storedUser) : null;
   });
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
-  const [loading, setLoading] = useState(true); // <-- arranca cargando
+  const [loading, setLoading] = useState(true); 
   const [error, setError] = useState(null);
 
   const getProfile = async (token = localStorage.getItem("token")) => {
@@ -20,7 +19,7 @@ export const AuthProvider = ({ children }) => {
       const res = await api.get("/me", { headers: { Authorization: `Bearer ${token}` } });
       const profile = res.data.datos || res.data;
       setUser(profile);
-      localStorage.setItem("user", JSON.stringify(profile)); // 👉 persistir perfil
+      localStorage.setItem("user", JSON.stringify(profile));
       return profile;
     } catch {
       logout();
@@ -89,7 +88,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Al montar, verificar token
+
   useEffect(() => {
     verifyToken();
   }, []);
